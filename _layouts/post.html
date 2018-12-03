@@ -47,12 +47,23 @@ layout: default
       </div>
 
       <div class="read-time">
+
+        {% if page.tags and page.tags.size > 0 %}
+        <div class="tags">
+          <small>
+          <i class="fa fa-tags"></i>
+            {{ page.tags | join: ', ' }}
+          </small>
+        </div>
+        {% endif %}
+
         <small>
           {{ minutes }} minute read
         </small>
       </div>
 
       <div class="content-panel content">
+      <div id="toc"> {% include toc.html html=content %} </div>
 
         {% if page.series %}
           This post is part of the series '{{ page.series }}':
@@ -87,16 +98,7 @@ layout: default
         {% if site.addthis_id %}
         <div class="share">
           <!-- Go to www.addthis.com/dashboard to customize your tools -->
-          <div class="addthis_sharing_toolbox"></div>
-        </div>
-        {% endif %}
-
-        {% if page.tags and page.tags.size > 0 %}
-        <div class="tags">
-          <small>
-          <i class="fa fa-tags"></i>
-            {{ page.tags | join: ', ' }}
-          </small>
+          <!--div class="addthis_sharing_toolbox"></div-->
         </div>
         {% endif %}
 
@@ -113,10 +115,10 @@ layout: default
         Let me know what you think of this article on twitter <a href="http://www.twitter.com/{{ site.twitter_username }}">@{{ site.twitter_username }}</a>!
       </div>
       {% elsif site.disqus_account %}
-      <div class="content-panel feedback">
+      <!--div class="content-panel feedback">
         I <i class="fa fa-heart"></i> feedback.<br />
         Let me know what you think of this article in the comment section below!
-      </div>
+      </div-->
       {% endif %}
 
       {% if site.disqus_account %}

@@ -560,6 +560,7 @@ ul {
 		}
 
 		.content {
+			width: 1000px;
 			font-size: 18px;
 			line-height: 170%;
 			padding-left: 15px;
@@ -568,7 +569,7 @@ ul {
 			padding-bottom: 10px;
 
 			@media (min-width: $screen-sm-min) {
-				font-size: 24px;
+				font-size: 18px;
 				padding-left: 30px;
 				padding-right: 30px;
 				padding-top: 40px;
@@ -898,4 +899,18 @@ th{
 td{
     padding: 2px;
     border:1px solid $dark-blue;;
+}
+
+#menu {
+  position: fixed;
+  left: 0;
+  top: 0;
+  display: block;
+}
+#toc {
+  position: fixed;
+  left: 0;
+  top: 13%;
+  background-color:#FFF;
+  display: block;
 }
