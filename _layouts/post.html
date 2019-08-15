@@ -2,6 +2,7 @@
 layout: default
 ---
 
+
 {% if page.minutes %}
   {% assign minutes = page.minutes %}
 {% else %}
@@ -87,7 +88,25 @@ layout: default
           </ol>
         {% endif %}
 
-        <span itemprop="articleBody">{{ content }}</span>
+<link rel="stylesheet" href="/css/github-markdown.css">
+<style>
+	.markdown-body {
+		box-sizing: border-box;
+		min-width: 200px;
+		max-width: 980px;
+		margin: 0 auto;
+		padding: 45px;
+	}
+
+	@media (max-width: 767px) {
+		.markdown-body {
+			padding: 15px;
+		}
+	}
+</style>
+<script type="text/javascript" src="/js/gfm-hack.js"></script>
+
+        <div id="markdown-body" class="markdown-body">{{ content }}</div>
 
         {% if page.series %}
           {% if seriesnext %}
