@@ -1,0 +1,788 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.6">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2020-12-05T12:50:17+08:00</updated><id>/feed.xml</id><title type="html">我是一只羊</title><subtitle>I am a seasoned DBMS developer on x86_64 machine.
+</subtitle><entry><title type="html">High Availability Cluster</title><link href="/2019/10/12/High-Availability-Cluster.html" rel="alternate" type="text/html" title="High Availability Cluster" /><published>2019-10-12T00:00:00+08:00</published><updated>2019-10-12T00:00:00+08:00</updated><id>/2019/10/12/High-Availability-Cluster</id><content type="html" xml:base="/2019/10/12/High-Availability-Cluster.html">&lt;h2 id=&quot;hdfs&quot;&gt;HDFS&lt;/h2&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;https://www.edureka.co/blog/how-to-set-up-hadoop-cluster-with-hdfs-high-availability/&lt;/p&gt;
+
+  &lt;p&gt;https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-hdfs/HDFSHighAvailabilityWithQJM.html&lt;/p&gt;
+
+  &lt;p&gt;https://docs.cloudera.com/HDPDocuments/HDP3/HDP-3.0.1/data-storage/content/add_a_namenode_to_an_existing_hdfs_cluster.html&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Check HDFS status&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-u&lt;/span&gt; hdfs hdfs dfsadmin &lt;span class=&quot;nt&quot;&gt;-report&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-u&lt;/span&gt; hdfs hdfs dfs &lt;span class=&quot;nt&quot;&gt;-du&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-h&lt;/span&gt; /
+
+&lt;span class=&quot;c&quot;&gt;# Check NameNode status&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# Check property of `dfs.ha.namenodes.oushu` in hdfs-site.xml&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-u&lt;/span&gt; hdfs hdfs haadmin &lt;span class=&quot;nt&quot;&gt;-getServiceState&lt;/span&gt; nn1
+&lt;span class=&quot;nb&quot;&gt;sudo&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-u&lt;/span&gt; hdfs hdfs haadmin &lt;span class=&quot;nt&quot;&gt;-getServiceState&lt;/span&gt; nn2
+
+&lt;span class=&quot;nb&quot;&gt;sudo&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-u&lt;/span&gt; zookeeper /usr/hdp/current/zookeeper-server/bin/zkServer.sh start
+&lt;span class=&quot;nb&quot;&gt;sudo&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-u&lt;/span&gt; hdfs &lt;span class=&quot;nt&quot;&gt;-E&lt;/span&gt; /usr/hdp/current/hadoop-client/sbin/hadoop-daemon.sh start zkfc
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;add-new-namenode-to-ha-hdfs&quot;&gt;Add New NameNode to HA HDFS&lt;/h3&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;HDFS 2.7 &lt;code class=&quot;highlighter-rouge&quot;&gt;Expected exactly 2 NameNodes in namespace&lt;/code&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;vi /usr/hdp/current/hadoop-client/etc/hadoop/hdfs-site.xml
+hawq scp &lt;span class=&quot;nt&quot;&gt;-f&lt;/span&gt; ~/hostfile /usr/hdp/current/hadoop-client/etc/hadoop/hdfs-site.xml &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;:/tmp/
+hawq ssh &lt;span class=&quot;nt&quot;&gt;-f&lt;/span&gt; ~/hostfile &lt;span class=&quot;s1&quot;&gt;'sudo cp /tmp/hdfs-site.xml /usr/hdp/current/hadoop-client/etc/hadoop/hdfs-site.xml'&lt;/span&gt;
+
+
+hawq ssh &lt;span class=&quot;nt&quot;&gt;-h&lt;/span&gt; STANDBYHOST &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'sudo -u hdfs -E /usr/hdp/current/hadoop-client/sbin/hadoop-daemon.sh stop namenode'&lt;/span&gt;
+
+
+hawq ssh &lt;span class=&quot;nt&quot;&gt;-h&lt;/span&gt; STANDBYHOST &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'sudo -u hdfs -E /usr/hdp/current/hadoop-client/sbin/hadoop-daemon.sh start journalnode'&lt;/span&gt;
+
+hawq ssh &lt;span class=&quot;nt&quot;&gt;-h&lt;/span&gt; STANDBYHOST &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'sudo -u hdfs -E hdfs namenode -bootstrapStandby'&lt;/span&gt;
+hawq ssh &lt;span class=&quot;nt&quot;&gt;-h&lt;/span&gt; STANDBYHOST &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'sudo -u hdfs -E /usr/hdp/current/hadoop-client/sbin/hadoop-daemon.sh start namenode'&lt;/span&gt;
+
+hawq ssh &lt;span class=&quot;nt&quot;&gt;-h&lt;/span&gt; STANDBYHOST &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'sudo -u zookeeper /usr/hdp/current/zookeeper-server/bin/zkServer.sh start'&lt;/span&gt;
+hawq ssh &lt;span class=&quot;nt&quot;&gt;-h&lt;/span&gt; STANDBYHOST &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'sudo -u hdfs -E /usr/hdp/current/hadoop-client/sbin/hadoop-daemon.sh start zkfc'&lt;/span&gt;
+
+hawq ssh &lt;span class=&quot;nt&quot;&gt;-h&lt;/span&gt; STANDBYHOST &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'sudo -u hdfs -E /usr/hdp/current/hadoop-client/sbin/hadoop-daemon.sh start journalnode'&lt;/span&gt;
+hawq ssh &lt;span class=&quot;nt&quot;&gt;-h&lt;/span&gt; STANDBYHOST &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'sudo -u hdfs -E /usr/hdp/current/hadoop-client/sbin/hadoop-daemon.sh start zkfc'&lt;/span&gt;
+
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;bibliography&quot;&gt;Bibliography&lt;/h2&gt;</content><author><name>Chiyang Wan</name></author><summary type="html">HDFS</summary></entry><entry><title type="html">Setting up CentOS 7</title><link href="/2019/09/24/Setting-up-Kylin-4.html" rel="alternate" type="text/html" title="Setting up CentOS 7" /><published>2019-09-24T00:00:00+08:00</published><updated>2019-09-24T00:00:00+08:00</updated><id>/2019/09/24/Setting-up-Kylin-4</id><content type="html" xml:base="/2019/09/24/Setting-up-Kylin-4.html">&lt;p&gt;I have received my new PC.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;社会主义的本质，是解放生产力，发展生产力，……&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Kylin 4.0.2 is based on Ubuntu.&lt;/p&gt;
+
+&lt;p&gt;软件环境：&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;终端类别&lt;/th&gt;
+      &lt;th&gt;操作系统&lt;/th&gt;
+      &lt;th&gt;相关应用软件&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;单机&lt;/td&gt;
+      &lt;td&gt;Kylin 4.0.2 (GNU/Linux 4.4.58-20180615.kylin.server.YUN+-generic aarch64)&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;硬件环境：&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;终端类别&lt;/th&gt;
+      &lt;th style=&quot;text-align: left&quot;&gt;机器名&lt;/th&gt;
+      &lt;th&gt;设备编号&lt;/th&gt;
+      &lt;th&gt;配置说明&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;单机&lt;/td&gt;
+      &lt;td style=&quot;text-align: left&quot;&gt;长城擎天C F/L520服务器&lt;/td&gt;
+      &lt;td&gt;厂商设备&lt;/td&gt;
+      &lt;td&gt;CPU：phytium FT1500a 内存：62GB 硬盘：1.5T&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;add-local-apt-repo&quot;&gt;Add Local Apt Repo&lt;/h2&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;mount /dev/sr0 /media/kylin/Kylin-4.0.2
+&lt;span class=&quot;nb&quot;&gt;cp&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-r&lt;/span&gt; /media/kylin/Kylin-4.0.2 /tmp
+&lt;span class=&quot;nb&quot;&gt;sudo chown&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-R&lt;/span&gt; _apt:root /tmp/Kylin-4.0.2
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'deb file:///tmp/Kylin-4.0.2 juniper main'&lt;/span&gt; | &lt;span class=&quot;nb&quot;&gt;sudo tee&lt;/span&gt; /etc/apt/sources.list.d/Kylin-4.0.2.list
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;apt-get update
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;toolchain&quot;&gt;Toolchain&lt;/h2&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# There is no gcc-c++ ...&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; ~/dev/
+&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;PREFIX&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/home/kylin/dev/package
+&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;MAKEFLAGS&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;-j&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$((&lt;/span&gt;&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;nproc&lt;/span&gt;&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;))&lt;/span&gt;
+
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;apt-get &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;gcc-4.9 libstdc++-4.9-dev git libncurses5-dev gawk libreadline-dev
+
+&lt;span class=&quot;c&quot;&gt;# Clang&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# The newer version depends on GLIBCXX_3.4.22.&lt;/span&gt;
+wget https://github.com/llvm/llvm-project/releases/download/llvmorg-7.1.0/clang+llvm-7.1.0-aarch64-linux-gnu.tar.xz
+
+&lt;span class=&quot;c&quot;&gt;# CMake&lt;/span&gt;
+wget https://github.com/Kitware/CMake/releases/download/v3.15.3/cmake-3.15.3.tar.gz
+&lt;span class=&quot;nb&quot;&gt;tar &lt;/span&gt;xf cmake-3.15.3.tar.gz
+&lt;span class=&quot;nb&quot;&gt;cd &lt;/span&gt;cmake-3.15.3
+./bootstrap &lt;span class=&quot;nt&quot;&gt;--&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-DCMAKE_BUILD_TYPE&lt;/span&gt;:STRING&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;Release
+make
+
+&lt;span class=&quot;c&quot;&gt;# Thirdparty&lt;/span&gt;
+make check-target-dir
+make build-hawq-dep
+
+wget &lt;span class=&quot;nt&quot;&gt;-O&lt;/span&gt; config.guess &lt;span class=&quot;s1&quot;&gt;'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD'&lt;/span&gt;
+wget &lt;span class=&quot;nt&quot;&gt;-O&lt;/span&gt; config.sub &lt;span class=&quot;s1&quot;&gt;'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD'&lt;/span&gt;
+find src/ &lt;span class=&quot;nt&quot;&gt;-name&lt;/span&gt; config.sub &lt;span class=&quot;nt&quot;&gt;-exec&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;cp &lt;/span&gt;config.sub &lt;span class=&quot;o&quot;&gt;{}&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\;&lt;/span&gt;
+find src/ &lt;span class=&quot;nt&quot;&gt;-name&lt;/span&gt; config.guess &lt;span class=&quot;nt&quot;&gt;-exec&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;cp &lt;/span&gt;config.guess &lt;span class=&quot;o&quot;&gt;{}&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\;&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# Apache HAWQ&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$PREFIX&lt;/span&gt;/env.sh
+wget &lt;span class=&quot;nt&quot;&gt;-O&lt;/span&gt; config/config.guess &lt;span class=&quot;s1&quot;&gt;'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD'&lt;/span&gt;
+git &lt;span class=&quot;nb&quot;&gt;grep&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-l&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'if (HWCrc32c::available())'&lt;/span&gt;  | xargs &lt;span class=&quot;nb&quot;&gt;sed&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-i&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'s/if (HWCrc32c::available())/if(false)/'&lt;/span&gt;
+git &lt;span class=&quot;nb&quot;&gt;grep&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-l&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'if (dbcommon::HWCrc32c::available())'&lt;/span&gt;  | xargs &lt;span class=&quot;nb&quot;&gt;sed&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-i&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'s/if (dbcommon::HWCrc32c::available())/if(false)/'&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; /usr/local/hawq
+&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;DEPENDENCY_PATH&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$PREFIX&lt;/span&gt;
+./configure &lt;span class=&quot;nt&quot;&gt;--with-python&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--disable-spinlocks&lt;/span&gt;
+make &lt;span class=&quot;nv&quot;&gt;DEFAULTTARGET&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt;
+
+
+
+&lt;span class=&quot;c&quot;&gt;# PostgreSQL&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; /usr/local/postgres
+./configure &lt;span class=&quot;nt&quot;&gt;--disable-spinlocks&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--prefix&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/usr/local/postgres
+make &lt;span class=&quot;nb&quot;&gt;install
+export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;PATH&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/usr/local/postgres/bin:&lt;span class=&quot;nv&quot;&gt;$PATH&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# Libhdfs3&lt;/span&gt;
+git &lt;span class=&quot;nb&quot;&gt;grep&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-l&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'if (HWCrc32c::available())'&lt;/span&gt;  | xargs &lt;span class=&quot;nb&quot;&gt;sed&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-i&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'s/if (HWCrc32c::available())/if(false)/'&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# Hornet&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;RUN_UNITTEST&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;no
+git &lt;span class=&quot;nb&quot;&gt;grep&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-l&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'if (HWCrc32c::available())'&lt;/span&gt;  | xargs &lt;span class=&quot;nb&quot;&gt;sed&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-i&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'s/if (HWCrc32c::available())/if(false)/'&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;</content><author><name>Chiyang Wan</name></author><summary type="html">I have received my new PC.</summary></entry><entry><title type="html">Were I an Intern</title><link href="/2019/08/28/Homebrew-Related.html" rel="alternate" type="text/html" title="Were I an Intern" /><published>2019-08-28T00:00:00+08:00</published><updated>2019-08-28T00:00:00+08:00</updated><id>/2019/08/28/Homebrew-Related</id><content type="html" xml:base="/2019/08/28/Homebrew-Related.html">&lt;h2 id=&quot;debug-formulae&quot;&gt;Debug formulae&lt;/h2&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;HOMEBREW_NO_AUTO_UPDATE&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;1
+brew &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--debug&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;.rb
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;</content><author><name>Chiyang Wan</name></author><summary type="html">Debug formulae</summary></entry><entry><title type="html">Setting up DBMS on macOS</title><link href="/2019/08/10/Setting-up-DBMS-on-macOS.html" rel="alternate" type="text/html" title="Setting up DBMS on macOS" /><published>2019-08-10T00:00:00+08:00</published><updated>2019-08-10T00:00:00+08:00</updated><id>/2019/08/10/Setting-up-DBMS-on-macOS</id><content type="html" xml:base="/2019/08/10/Setting-up-DBMS-on-macOS.html">&lt;p&gt;This post introduces a quick reference on how to set up serveral main stream DBMSs on macOS(tested on macOS 10.12, 10.13 and 10.14). All the code snippets are dedicated to run in &lt;code class=&quot;highlighter-rouge&quot;&gt;bash&lt;/code&gt; directly, as a result of which there is no need to switch between shell interpreter and text editor back and forth.&lt;/p&gt;
+
+&lt;p&gt;Each code snippet is divided into to 6 parts, i.e. &lt;code class=&quot;highlighter-rouge&quot;&gt;Install, Configure, Initialize, Start, Connect and Stop&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;And all the related data is stored inside &lt;code class=&quot;highlighter-rouge&quot;&gt;/db_data/&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;system-prerequisite&quot;&gt;System Prerequisite&lt;/h2&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Setup passphraseless ssh&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;systemsetup &lt;span class=&quot;nt&quot;&gt;-setremotelogin&lt;/span&gt; on
+ssh-keygen &lt;span class=&quot;nt&quot;&gt;-t&lt;/span&gt; rsa &lt;span class=&quot;nt&quot;&gt;-P&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;''&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-f&lt;/span&gt; ~/.ssh/id_rsa
+&lt;span class=&quot;nb&quot;&gt;cat&lt;/span&gt; ~/.ssh/id_rsa.pub &lt;span class=&quot;o&quot;&gt;&amp;gt;&amp;gt;&lt;/span&gt; ~/.ssh/authorized_keys
+&lt;span class=&quot;nb&quot;&gt;chmod &lt;/span&gt;0600 ~/.ssh/authorized_keys
+
+&lt;span class=&quot;c&quot;&gt;# Configure system kernel state&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo tee&lt;/span&gt; /etc/sysctl.conf &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;EOF&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
+kern.sysv.shmmax=2147483648
+kern.sysv.shmmin=1
+kern.sysv.shmmni=64
+kern.sysv.shmseg=16
+kern.sysv.shmall=524288
+kern.maxfiles=65535
+kern.maxfilesperproc=65536
+kern.corefile=/cores/core.%N.%P
+&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;EOF
+&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;cat&lt;/span&gt; /etc/sysctl.conf | xargs &lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;sysctl
+
+&lt;span class=&quot;c&quot;&gt;# Add data folder&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; /db_data/
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;hdfs&quot;&gt;HDFS&lt;/h2&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Install&lt;/span&gt;
+brew &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;hadoop
+
+&lt;span class=&quot;c&quot;&gt;# Configure&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;HADOOP_HOME&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/usr/local/opt/hadoop/libexec
+&lt;span class=&quot;nb&quot;&gt;tee&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$HADOOP_HOME&lt;/span&gt;/etc/hadoop/core-site.xml &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;EOF&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
+&amp;lt;configuration&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;fs.defaultFS&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;hdfs://localhost:8020&amp;lt;/value&amp;gt;
+    &amp;lt;/property&amp;gt;
+    &amp;lt;property&amp;gt;
+         &amp;lt;name&amp;gt;hadoop.proxyuser.&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;.hosts&amp;lt;/name&amp;gt;
+         &amp;lt;value&amp;gt;*&amp;lt;/value&amp;gt;
+    &amp;lt;/property&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;hadoop.proxyuser.&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;.groups&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;*&amp;lt;/value&amp;gt;
+    &amp;lt;/property&amp;gt;
+&amp;lt;/configuration&amp;gt;
+&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;EOF
+&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;tee&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$HADOOP_HOME&lt;/span&gt;/etc/hadoop/hdfs-site.xml &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;EOF&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
+&amp;lt;configuration&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;dfs.namenode.name.dir&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;file:///db_data/hdfs/name&amp;lt;/value&amp;gt;
+    &amp;lt;/property&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;dfs.datanode.data.dir&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;file:///db_data/hdfs/data&amp;lt;/value&amp;gt;
+    &amp;lt;/property&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;dfs.replication&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;1&amp;lt;/value&amp;gt;
+    &amp;lt;/property&amp;gt;
+&amp;lt;/configuration&amp;gt;
+&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;EOF
+
+&lt;/span&gt;&lt;span class=&quot;c&quot;&gt;# Initialize&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; /db_data/hdfs/name
+&lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; /db_data/hdfs/data
+hdfs namenode &lt;span class=&quot;nt&quot;&gt;-format&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# Start&lt;/span&gt;
+/usr/local/opt/hadoop/sbin/start-dfs.sh
+
+&lt;span class=&quot;c&quot;&gt;# Connect&lt;/span&gt;
+hdfs dfsadmin &lt;span class=&quot;nt&quot;&gt;-report&lt;/span&gt;
+hdfs dfs &lt;span class=&quot;nt&quot;&gt;-ls&lt;/span&gt; /
+
+&lt;span class=&quot;c&quot;&gt;# Stop&lt;/span&gt;
+/usr/local/opt/hadoop/sbin/stop-dfs.sh
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;oushudb&quot;&gt;OushuDB&lt;/h2&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Install&lt;/span&gt;
+brew tap chiyang10000/homebrew-yizhiyang
+brew search chiyang10000
+brew &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;oushudb
+
+&lt;span class=&quot;c&quot;&gt;# Configure&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;tee&lt;/span&gt; /usr/local/opt/oushudb/etc/hawq-site.xml &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;EOF&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
+&amp;lt;configuration&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;hawq_dfs_url&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;localhost:8020/hawq_default&amp;lt;/value&amp;gt;
+        &amp;lt;description&amp;gt;URL for accessing HDFS.&amp;lt;/description&amp;gt;
+    &amp;lt;/property&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;hawq_master_address_host&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;localhost&amp;lt;/value&amp;gt;
+    &amp;lt;/property&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;hawq_master_address_port&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;5432&amp;lt;/value&amp;gt;
+    &amp;lt;/property&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;hawq_segment_address_port&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;40000&amp;lt;/value&amp;gt;
+    &amp;lt;/property&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;hawq_master_directory&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;/db_data/hawq-data-directory/masterdd&amp;lt;/value&amp;gt;
+    &amp;lt;/property&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;hawq_segment_directory&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;/db_data/hawq-data-directory/segmentdd&amp;lt;/value&amp;gt;
+    &amp;lt;/property&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;hawq_master_temp_directory&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;/tmp&amp;lt;/value&amp;gt;
+    &amp;lt;/property&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;hawq_segment_temp_directory&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;/tmp&amp;lt;/value&amp;gt;
+    &amp;lt;/property&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;hawq_magma_port_master&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;50000&amp;lt;/value&amp;gt;
+    &amp;lt;/property&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;hawq_magma_port_segment&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;50005&amp;lt;/value&amp;gt;
+    &amp;lt;/property&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;hawq_magma_locations_master&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;file:///db_data/hawq-data-directory/magma_master&amp;lt;/value&amp;gt;
+    &amp;lt;/property&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;hawq_magma_locations_segment&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;file:///db_data/hawq-data-directory/magma_segment&amp;lt;/value&amp;gt;
+    &amp;lt;/property&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;hawq_init_with_hdfs&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;true&amp;lt;/value&amp;gt;
+        &amp;lt;description&amp;gt;choose whether initing hawq cluster with hdfs&amp;lt;/description&amp;gt;
+    &amp;lt;/property&amp;gt;
+    &amp;lt;property&amp;gt;
+        &amp;lt;name&amp;gt;default_table_format&amp;lt;/name&amp;gt;
+        &amp;lt;value&amp;gt;appendonly&amp;lt;/value&amp;gt;
+        &amp;lt;description&amp;gt;default table format when creating table &amp;lt;/description&amp;gt;
+    &amp;lt;/property&amp;gt;
+&amp;lt;/configuration&amp;gt;
+&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;EOF
+
+&lt;/span&gt;&lt;span class=&quot;c&quot;&gt;# Initialize&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;rm&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-rf&lt;/span&gt; /opt/dependency&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;rm&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-rf&lt;/span&gt; /db_data/hawq-data-directory
+&lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; /db_data/hawq-data-directory/masterdd
+&lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; /db_data/hawq-data-directory/segmentdd
+&lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; /db_data/hawq-data-directory/magma_master
+&lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; /db_data/hawq-data-directory/magma_segment
+&lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt; /usr/local/opt/oushudb/greenplum_path.sh
+hawq init cluster &lt;span class=&quot;nt&quot;&gt;-a&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# Start&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt; /usr/local/opt/oushudb/greenplum_path.sh
+hawq start cluster &lt;span class=&quot;nt&quot;&gt;-a&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# Connect&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt; /usr/local/opt/oushudb/greenplum_path.sh
+psql &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; postgres
+
+&lt;span class=&quot;c&quot;&gt;# Stop&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt; /usr/local/opt/oushudb/greenplum_path.sh
+hawq stop cluster &lt;span class=&quot;nt&quot;&gt;-a&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;hive&quot;&gt;Hive&lt;/h2&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Pay attention that Hive only supports Java 8 or older.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Install&lt;/span&gt;
+brew &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;hive
+
+&lt;span class=&quot;c&quot;&gt;# Configure&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;HIVE_HOME&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/usr/local/opt/hive/libexec
+&lt;span class=&quot;nb&quot;&gt;tee&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$HIVE_HOME&lt;/span&gt;/conf/hive-site.xml &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;EOF&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
+&amp;lt;configuration&amp;gt;
+  &amp;lt;property&amp;gt;
+    &amp;lt;name&amp;gt;javax.jdo.option.ConnectionURL&amp;lt;/name&amp;gt;
+    &amp;lt;value&amp;gt;jdbc:derby:;databaseName=/db_data/hive_metastore_db;create=true&amp;lt;/value&amp;gt;
+  &amp;lt;/property&amp;gt;
+  &amp;lt;property&amp;gt;
+    &amp;lt;name&amp;gt;hive.server2.thrift.port&amp;lt;/name&amp;gt;
+    &amp;lt;value&amp;gt;10000&amp;lt;/value&amp;gt;
+  &amp;lt;/property&amp;gt;
+  &amp;lt;property&amp;gt;
+    &amp;lt;name&amp;gt;hive.server2.enable.doAs&amp;lt;/name&amp;gt;
+    &amp;lt;value&amp;gt;false&amp;lt;/value&amp;gt;
+  &amp;lt;/property&amp;gt;
+&amp;lt;/configuration&amp;gt;
+&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;EOF
+
+&lt;/span&gt;&lt;span class=&quot;c&quot;&gt;# Initialize&lt;/span&gt;
+hadoop fs &lt;span class=&quot;nt&quot;&gt;-mkdir&lt;/span&gt;       /tmp
+hadoop fs &lt;span class=&quot;nt&quot;&gt;-mkdir&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt;    /user/hive/warehouse
+hadoop fs &lt;span class=&quot;nt&quot;&gt;-chmod&lt;/span&gt; g+w   /tmp
+hadoop fs &lt;span class=&quot;nt&quot;&gt;-chmod&lt;/span&gt; g+w   /user/hive/warehouse
+schematool &lt;span class=&quot;nt&quot;&gt;-dbType&lt;/span&gt; derby &lt;span class=&quot;nt&quot;&gt;-initSchema&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# Start&lt;/span&gt;
+hive &lt;span class=&quot;nt&quot;&gt;--service&lt;/span&gt; hiveserver2
+hive &lt;span class=&quot;nt&quot;&gt;--service&lt;/span&gt; metastore
+
+&lt;span class=&quot;c&quot;&gt;# Connect&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;## Connect to HDFS directly&lt;/span&gt;
+hive
+&lt;span class=&quot;c&quot;&gt;## Connect to hiveserver2&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;## Should wait until hiveserver2 started and be aware of connection refused&lt;/span&gt;
+beeline &lt;span class=&quot;nt&quot;&gt;-n&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-u&lt;/span&gt; jdbc:hive2://127.0.0.1:10000
+
+&lt;span class=&quot;c&quot;&gt;# Stop&lt;/span&gt;
+killall hive
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;postgresql&quot;&gt;PostgreSQL&lt;/h2&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Install&lt;/span&gt;
+brew &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;postgresql
+
+&lt;span class=&quot;c&quot;&gt;# Configure/Initialize&lt;/span&gt;
+initdb &lt;span class=&quot;nt&quot;&gt;-D&lt;/span&gt; /db_data/postgresql/
+
+&lt;span class=&quot;c&quot;&gt;# Start&lt;/span&gt;
+pg_ctl &lt;span class=&quot;nt&quot;&gt;-D&lt;/span&gt; /db_data/postgresql/ start
+
+&lt;span class=&quot;c&quot;&gt;# Connect&lt;/span&gt;
+psql &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; postgres
+
+&lt;span class=&quot;c&quot;&gt;# Stop&lt;/span&gt;
+pg_ctl &lt;span class=&quot;nt&quot;&gt;-D&lt;/span&gt; /db_data/postgresql/ stop
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;mysql&quot;&gt;MySQL&lt;/h2&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Install&lt;/span&gt;
+brew &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;mysql
+
+&lt;span class=&quot;c&quot;&gt;# Configure/Initialize&lt;/span&gt;
+mysqld &lt;span class=&quot;nt&quot;&gt;--initialize-insecure&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--datadir&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/db_data/mysql/
+
+&lt;span class=&quot;c&quot;&gt;# Start&lt;/span&gt;
+mysqld &lt;span class=&quot;nt&quot;&gt;--datadir&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/db_data/mysql/
+
+&lt;span class=&quot;c&quot;&gt;# Connect&lt;/span&gt;
+mysql &lt;span class=&quot;nt&quot;&gt;-u&lt;/span&gt; root &lt;span class=&quot;nt&quot;&gt;-D&lt;/span&gt; mysql
+
+&lt;span class=&quot;c&quot;&gt;# Stop&lt;/span&gt;
+killall mysqld
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;</content><author><name>Chiyang Wan</name></author><summary type="html">This post introduces a quick reference on how to set up serveral main stream DBMSs on macOS(tested on macOS 10.12, 10.13 and 10.14). All the code snippets are dedicated to run in bash directly, as a result of which there is no need to switch between shell interpreter and text editor back and forth.</summary></entry><entry><title type="html">Setting up CentOS 7</title><link href="/2019/05/26/Setting-up-CentOS-7.html" rel="alternate" type="text/html" title="Setting up CentOS 7" /><published>2019-05-26T00:00:00+08:00</published><updated>2019-05-26T00:00:00+08:00</updated><id>/2019/05/26/Setting-up-CentOS-7</id><content type="html" xml:base="/2019/05/26/Setting-up-CentOS-7.html">&lt;p&gt;I have received my new PC.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;社会主义的本质，是解放生产力，发展生产力，……&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;install-and-configure-centos-7&quot;&gt;Install and Configure CentOS 7&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;setup the boot device&lt;/li&gt;
+  &lt;li&gt;install and reboot&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;disable-selinux&quot;&gt;Disable SELinux&lt;/h3&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;visudo
+&lt;span class=&quot;nb&quot;&gt;sudo ln&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-sf&lt;/span&gt; /usr/share/zoneinfo/Hongkong /etc/localtime
+&lt;span class=&quot;nb&quot;&gt;sudo sed&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-i&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'s/SELINUX=.*/SELINUX=disabled/'&lt;/span&gt; /etc/selinux/config
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;setenforce 0
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;passwd root
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;configure-network-and-firewall&quot;&gt;Configure Network and Firewall&lt;/h3&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;sudo tee&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-a&lt;/span&gt; /etc/sysconfig/network-scripts/ifcfg-eno1 &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;EOF&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
+ONBOOT=yes
+BOOTPROTO=static
+DEVICE=eno1
+IPADDR=192.168.1.168
+GATEWAY=192.168.1.1
+NETMASK=255.255.255.0
+&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;EOF
+
+&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;sudo tee&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-a&lt;/span&gt; /etc/resolv.conf &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;EOF&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
+nameserver 114.114.114.114
+&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;EOF
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;firewall-cmd &lt;span class=&quot;nt&quot;&gt;--zone&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;public &lt;span class=&quot;nt&quot;&gt;--add-port&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;9870/tcp &lt;span class=&quot;nt&quot;&gt;--permanent&lt;/span&gt;  &lt;span class=&quot;c&quot;&gt;# hdfs ui&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;firewall-cmd &lt;span class=&quot;nt&quot;&gt;--zone&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;public &lt;span class=&quot;nt&quot;&gt;--add-port&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;19999/tcp &lt;span class=&quot;nt&quot;&gt;--permanent&lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# net-data&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;firewall-cmd &lt;span class=&quot;nt&quot;&gt;--zone&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;public &lt;span class=&quot;nt&quot;&gt;--add-port&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;23333/tcp &lt;span class=&quot;nt&quot;&gt;--permanent&lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# yikesaiting&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;firewall-cmd &lt;span class=&quot;nt&quot;&gt;--zone&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;public &lt;span class=&quot;nt&quot;&gt;--add-port&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;38324/tcp &lt;span class=&quot;nt&quot;&gt;--permanent&lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# planchecker&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;systemctl restart firewalld.service
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;yum &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;openssh-server &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt;
+service sshd start
+
+&lt;span class=&quot;nb&quot;&gt;test&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-f&lt;/span&gt; ~/.ssh/id_rsa &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; ssh-keygen &lt;span class=&quot;nt&quot;&gt;-t&lt;/span&gt; rsa &lt;span class=&quot;nt&quot;&gt;-N&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-f&lt;/span&gt; ~/.ssh/id_rsa
+&lt;span class=&quot;nb&quot;&gt;touch&lt;/span&gt; ~/.ssh/authorized_keys
+&lt;span class=&quot;nb&quot;&gt;chmod &lt;/span&gt;600 ~/.ssh/authorized_keys
+&lt;span class=&quot;nb&quot;&gt;cat&lt;/span&gt; ~/.ssh/id_rsa.pub &lt;span class=&quot;o&quot;&gt;&amp;gt;&amp;gt;&lt;/span&gt; ~/.ssh/authorized_keys
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;yum &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt; NetworkManager-wifi dnsmasq
+&lt;span class=&quot;nv&quot;&gt;IFNAME&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;wlo1&quot;&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;CON_NAME&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;exciting-wifi&quot;&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;nmcli con add &lt;span class=&quot;nb&quot;&gt;type &lt;/span&gt;wifi ifname &lt;span class=&quot;nv&quot;&gt;$IFNAME&lt;/span&gt; con-name &lt;span class=&quot;nv&quot;&gt;$CON_NAME&lt;/span&gt; autoconnect &lt;span class=&quot;nb&quot;&gt;yes &lt;/span&gt;ssid &lt;span class=&quot;nv&quot;&gt;$CON_NAME&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;nmcli con modify &lt;span class=&quot;nv&quot;&gt;$CON_NAME&lt;/span&gt; 802-11-wireless.mode ap 802-11-wireless.band &lt;span class=&quot;nb&quot;&gt;bg &lt;/span&gt;ipv4.method shared
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;nmcli con modify &lt;span class=&quot;nv&quot;&gt;$CON_NAME&lt;/span&gt; wifi-sec.key-mgmt wpa-psk
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;nmcli con modify &lt;span class=&quot;nv&quot;&gt;$CON_NAME&lt;/span&gt; wifi-sec.psk &lt;span class=&quot;s2&quot;&gt;&quot;MyStrongHotspotPass&quot;&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;nmcli con up &lt;span class=&quot;nv&quot;&gt;$CON_NAME&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;run-on-memory&quot;&gt;Run on Memory&lt;/h3&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;rm&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-rf&lt;/span&gt; /opt /usr/local
+&lt;span class=&quot;nb&quot;&gt;mkdir&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; /data0/opt /data0/local
+&lt;span class=&quot;nb&quot;&gt;ln&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-sf&lt;/span&gt; /data0/opt /opt
+&lt;span class=&quot;nb&quot;&gt;ln&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-sf&lt;/span&gt; /data0/local /usr/local
+
+useradd &lt;span class=&quot;nt&quot;&gt;-md&lt;/span&gt; /dev/shm/&lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt;
+/dev/shm/db_data
+/dev/shm/hdfs/
+/dev/shm/opt
+/dev/shm/cores/
+
+
+
+&lt;span class=&quot;nb&quot;&gt;sudo tee&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-a&lt;/span&gt; /etc/sysctl.conf &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;EOF&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
+net.ipv4.ip_forward=1
+&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;EOF
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;others&quot;&gt;Others&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;config disk volume&lt;/p&gt;
+
+    &lt;p&gt;Pay attention to that it is not allowed to reduce lvm when mounted, which might cause super block corruption.&lt;/p&gt;
+
+    &lt;p&gt;Be familiar with &lt;code class=&quot;highlighter-rouge&quot;&gt;pvs&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;lvs&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;/etc/fstab&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;lvcreate&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;lvremove&lt;/code&gt;.&lt;/p&gt;
+
+    &lt;p&gt;https://www.tecmint.com/extend-and-reduce-lvms-in-linux/&lt;/p&gt;
+
+    &lt;p&gt;https://stackoverflow.com/questions/26305376/resize2fs-bad-magic-number-in-super-block-while-trying-to-open&lt;/p&gt;
+
+    &lt;p&gt;https://www.cyberciti.biz/faq/linux-mount-an-lvm-volume-partition-command/&lt;/p&gt;
+
+    &lt;p&gt;&lt;a href=&quot;http://yallalabs.com/linux/how-to-reduce-shrink-the-size-of-a-lvm-partition-formatted-with-xfs-filesystem/&quot;&gt;http://yallalabs.com/linux/how-to-reduce-shrink-the-size-of-a-lvm-partition-formatted-with-xfs-filesystem/&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;install-software&quot;&gt;Install Software&lt;/h2&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;yum &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;coreutils vim
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;install-docker&quot;&gt;Install Docker&lt;/h3&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;yum &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt; yum-utils &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    device-mapper-persistent-data &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    lvm2
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;yum-config-manager &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;--add-repo&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    https://download.docker.com/linux/centos/docker-ce.repo
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;yum &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt; docker-ce docker-ce-cli containerd.io
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;systemctl &lt;span class=&quot;nb&quot;&gt;enable &lt;/span&gt;docker
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;systemctl start docker
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;usermod &lt;span class=&quot;nt&quot;&gt;-aG&lt;/span&gt; docker &lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# Binary&lt;/span&gt;
+wget https://download.docker.com/linux/static/stable/x86_64/docker-18.09.9.tgz
+&lt;span class=&quot;nb&quot;&gt;sudo mkdir&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; /data0/bin
+&lt;span class=&quot;nb&quot;&gt;sudo tee&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-a&lt;/span&gt; /etc/sudoers &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;EOF&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
+Defaults    secure_path = /usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/data0/bin
+&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;EOF
+&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;sudo tee&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-a&lt;/span&gt; /etc/security/pam_env.conf &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;EOF&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
+PATH            DEFAULT=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/data0/bin
+&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;EOF
+&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;sudo tar &lt;/span&gt;xf docker-18.09.9.tgz &lt;span class=&quot;nt&quot;&gt;--strip-components&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;1 &lt;span class=&quot;nt&quot;&gt;-C&lt;/span&gt; /data0/bin
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;dockerd &lt;span class=&quot;nt&quot;&gt;--exec-root&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/data3/docker-root &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+             &lt;span class=&quot;nt&quot;&gt;--data-root&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/data3/docker-data &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+             &lt;span class=&quot;nt&quot;&gt;--pidfile&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/data3/docker.pid &amp;amp;
+&lt;span class=&quot;nb&quot;&gt;sudo chmod &lt;/span&gt;a+rw /var/run/docker.sock
+docker ps &lt;span class=&quot;nt&quot;&gt;-a&lt;/span&gt; | &lt;span class=&quot;nb&quot;&gt;awk&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'{print $1}'&lt;/span&gt; | xargs docker &lt;span class=&quot;nb&quot;&gt;rm&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;install-netdata&quot;&gt;Install Netdata&lt;/h3&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;bash &amp;lt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;curl &lt;span class=&quot;nt&quot;&gt;-Ss&lt;/span&gt; https://my-netdata.io/kickstart-static64.sh&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--stable-channel&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;install-hadoop&quot;&gt;Install Hadoop&lt;/h3&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wget https://mirrors.tuna.tsinghua.edu.cn/apache/hadoop/common/hadoop-3.1.3/hadoop-3.1.3.tar.gz
+&lt;span class=&quot;nb&quot;&gt;tar &lt;/span&gt;xf hadoop-3.1.3.tar.gz
+&lt;span class=&quot;nb&quot;&gt;sudo mv &lt;/span&gt;hadoop-3.1.3 /usr/local/
+
+&lt;span class=&quot;nb&quot;&gt;sudo install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; /hdfs
+&lt;span class=&quot;nb&quot;&gt;sudo install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; /var/lib/hadoop-hdfs
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;adduser hdfs
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;usermod &lt;span class=&quot;nt&quot;&gt;-aG&lt;/span&gt; hdfs &lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# Log out and log back in so that your group membership is re-evaluated.&lt;/span&gt;
+
+&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;HADOOP_HOME&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/usr/local/hadoop-3.1.3
+&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$HADOOP_HOME&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;tee etc/hadoop/core-site.xml &lt;span class=&quot;err&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt; CORE_SITE&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;&amp;lt;configuration&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+   &lt;span class=&quot;nt&quot;&gt;&amp;lt;property&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;fs.default.name&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;value&amp;gt;&lt;/span&gt;hdfs://localhost:8020&lt;span class=&quot;nt&quot;&gt;&amp;lt;/value&amp;gt;&lt;/span&gt;
+   &lt;span class=&quot;nt&quot;&gt;&amp;lt;/property&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/configuration&amp;gt;&lt;/span&gt;
+CORE_SITE
+
+tee etc/hadoop/hdfs-site.xml &lt;span class=&quot;err&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt; HDFS_SITE&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;&amp;lt;configuration&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;property&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;dfs.client.read.shortcircuit&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;value&amp;gt;&lt;/span&gt;true&lt;span class=&quot;nt&quot;&gt;&amp;lt;/value&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/property&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;property&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;dfs.domain.socket.path&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;value&amp;gt;&lt;/span&gt;/var/lib/hadoop-hdfs/dn_socket&lt;span class=&quot;nt&quot;&gt;&amp;lt;/value&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/property&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;property&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;dfs.namenode.name.dir&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;value&amp;gt;&lt;/span&gt;file:///hdfs/name&lt;span class=&quot;nt&quot;&gt;&amp;lt;/value&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/property&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;property&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;dfs.datanode.data.dir&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;value&amp;gt;&lt;/span&gt;file:///hdfs/data&lt;span class=&quot;nt&quot;&gt;&amp;lt;/value&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/property&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;property&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;dfs.replication&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;value&amp;gt;&lt;/span&gt;1&lt;span class=&quot;nt&quot;&gt;&amp;lt;/value&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/property&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;property&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;dfs.permissions.supergroup&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;value&amp;gt;&lt;/span&gt;hdfs&lt;span class=&quot;nt&quot;&gt;&amp;lt;/value&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/property&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/configuration&amp;gt;&lt;/span&gt;
+HDFS_SITE
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;JAVA_HOME&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;$(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;dirname&lt;/span&gt; &lt;span class=&quot;si&quot;&gt;$(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;dirname&lt;/span&gt; &lt;span class=&quot;si&quot;&gt;$(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;readlink&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-f&lt;/span&gt; &lt;span class=&quot;si&quot;&gt;$(&lt;/span&gt;which java&lt;span class=&quot;si&quot;&gt;))))&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;$HADOOP_HOME&lt;/span&gt;/bin/hdfs namenode &lt;span class=&quot;nt&quot;&gt;-format&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;$HADOOP_HOME&lt;/span&gt;/bin/hdfs &lt;span class=&quot;nt&quot;&gt;--daemon&lt;/span&gt; start namenode
+&lt;span class=&quot;nv&quot;&gt;$HADOOP_HOME&lt;/span&gt;/bin/hdfs &lt;span class=&quot;nt&quot;&gt;--daemon&lt;/span&gt; start datanode
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;install-eclipse&quot;&gt;Install Eclipse&lt;/h3&gt;
+
+&lt;p&gt;Use &lt;code class=&quot;highlighter-rouge&quot;&gt;xev&lt;/code&gt; to check key bindings.&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;yum &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;xorg-x11-server-Xorg xorg-x11-xauth xorg-x11-apps xorg-x11-server-utils xorg-x11-utils xorg-x11-xinit &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt;
+
+&lt;span class=&quot;nb&quot;&gt;tee&lt;/span&gt; ~/.xmodmaprc &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;XMODMAPRC&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
+clear Mod2
+clear control
+keycode 63 = Control_L
+keycode 71 = Control_R
+add control = Control_L Control_R
+&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;XMODMAPRC
+
+&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'xmodmap ~/.xmodmaprc'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; ~/.bashrc
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wget http://yumazure.oushu-tech.com:12000/oushurepo/yumrepo/internal/linux/toolchain/eclipse-cpp-photon-R-linux-gtk-plugins-x86_64.tar.gz
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;install-planchecker&quot;&gt;Install Planchecker&lt;/h3&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wget https://dl.google.com/go/go1.12.5.linux-amd64.tar.gz
+&lt;span class=&quot;nb&quot;&gt;sudo tar &lt;/span&gt;xf go1.12.5.linux-amd64.tar.gz &lt;span class=&quot;nt&quot;&gt;-C&lt;/span&gt; /usr/local/
+&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;PATH&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;/usr/local/go/bin/:&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$PATH&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;
+
+&lt;span class=&quot;nb&quot;&gt;mkdir&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; ~/dev/goprojects/src/github.com/chiyang10000/
+&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; ~/dev/goprojects/src/github.com/chiyang10000/
+git clone git@github.com:chiyang10000/planchecker
+&lt;span class=&quot;nb&quot;&gt;ln&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-s&lt;/span&gt; ~/dev/goprojects/src/github.com/chiyang10000/planchecker ~/dev/planchecker
+&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; ~/dev/planchecker
+go get
+go build
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;install-python36&quot;&gt;Install Python3.6&lt;/h3&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;yum &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;centos-release-scl
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;yum &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;rh-python36
+&lt;span class=&quot;nb&quot;&gt;sudo&lt;/span&gt; /opt/rh/rh-python36/root/usr/bin/pip3 &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;requests
+&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;PATH&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;/opt/rh/rh-python36/root/usr/bin/:&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$PATH&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;install-smb&quot;&gt;Install SMB&lt;/h3&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;https://linuxize.com/post/how-to-install-and-configure-samba-on-centos-7/&lt;/p&gt;
+
+  &lt;p&gt;How to fix the permission problem?&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;yum &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;samba samba-client
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;systemctl &lt;span class=&quot;nb&quot;&gt;enable &lt;/span&gt;smb.service
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;systemctl &lt;span class=&quot;nb&quot;&gt;enable &lt;/span&gt;nmb.service
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;firewall-cmd &lt;span class=&quot;nt&quot;&gt;--permanent&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--zone&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;public &lt;span class=&quot;nt&quot;&gt;--add-service&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;samba
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;firewall-cmd &lt;span class=&quot;nt&quot;&gt;--zone&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;public &lt;span class=&quot;nt&quot;&gt;--add-service&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;samba
+
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;systemctl restart smb.service
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;systemctl restart nmb.service
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;install-linux-perf-and-kdabhotspot&quot;&gt;Install Linux perf and KDAB/hotspot&lt;/h3&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;git clone &lt;span class=&quot;nt&quot;&gt;--recurse-submodules&lt;/span&gt; git@github.com:KDAB/hotspot.git
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;yum &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;yum &lt;span class=&quot;nb&quot;&gt;install install &lt;/span&gt;cmake gcc glibc-static gcc-c++ libstdc++-static qt5 qt5-devel &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    extra-cmake-modules elfutils-devel kf5-threadweaver-devel kf5-ki18n-devel &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    kf5-kconfigwidgets-devel kf5-kitemviews-devel kf5-kitemmodels-devel &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    kf5-kio-devel kf5-solid-devel kf5-kwindowsystem-devel &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;yum &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;perf &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;yum &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;kde-runtime &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;install-postgresql&quot;&gt;Install PostgreSQL&lt;/h3&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;yum &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;postgresql-server &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;install-hawq&quot;&gt;Install HAWQ&lt;/h3&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;sudo tee&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-a&lt;/span&gt; /etc/sysctl.conf &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;SYSCTL&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
+kernel.shmmax = 1000000000
+kernel.shmmni = 4096
+kernel.shmall = 4000000000
+kernel.sem = 250 512000 100 2048
+kernel.sysrq = 1
+kernel.core_uses_pid = 1
+kernel.msgmnb = 65536
+kernel.msgmax = 65536
+kernel.msgmni = 2048
+net.ipv4.tcp_syncookies = 0
+net.ipv4.conf.default.accept_source_route = 0
+net.ipv4.tcp_tw_recycle = 1
+net.ipv4.tcp_max_syn_backlog = 200000
+net.ipv4.conf.all.arp_filter = 1
+net.ipv4.ip_local_port_range = 10000 65535
+net.core.netdev_max_backlog = 200000
+fs.nr_open = 3000000
+kernel.threads-max = 798720
+kernel.pid_max = 798720
+# increase network
+net.core.rmem_max=2097152
+net.core.wmem_max=2097152
+
+kernel.core_pattern=/cores/core.%e.%p
+&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;SYSCTL
+
+&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;sudo tee&lt;/span&gt; /etc/security/limits.d/&lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt;.conf &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;LIMITS&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
+* soft nofile 1048576
+* hard nofile 1048576
+* soft nproc 131072
+* hard nproc 131072
+&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;LIMITS
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;yum &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt; perl-XML-LibXML
+&lt;span class=&quot;nb&quot;&gt;sudo chmod &lt;/span&gt;a+w /opt
+&lt;span class=&quot;nb&quot;&gt;sudo install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; /usr/local/hawq
+&lt;span class=&quot;nb&quot;&gt;sudo install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$USER&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; /db_data
+&lt;span class=&quot;nb&quot;&gt;cp&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-r&lt;/span&gt; /opt/clang/lib/&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt; /usr/local/hawq/lib/
+&lt;span class=&quot;nb&quot;&gt;cp&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-r&lt;/span&gt; /opt/dependency-clang-x86_64-Linux/package/lib/&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt; /usr/local/hawq/lib/
+&lt;span class=&quot;nb&quot;&gt;cp&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-r&lt;/span&gt; /opt/dependency-clang-x86_64-Linux/package/bin/python&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt; /usr/local/hawq/bin/
+
+&lt;span class=&quot;c&quot;&gt;# fix hdfs-client.xml domain socker setting&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;install-gpdb&quot;&gt;Install GPDB&lt;/h3&gt;
+
+&lt;h3 id=&quot;install-http-server&quot;&gt;Install HTTP Server&lt;/h3&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;https://www.linode.com/docs/web-servers/apache/install-and-configure-apache-on-centos-7/&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;yum &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;httpd &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt;
+
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;systemctl &lt;span class=&quot;nb&quot;&gt;enable &lt;/span&gt;httpd.service
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;systemctl restart httpd.service
+
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;firewall-cmd &lt;span class=&quot;nt&quot;&gt;--add-service&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;http &lt;span class=&quot;nt&quot;&gt;--permanent&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;firewall-cmd &lt;span class=&quot;nt&quot;&gt;--add-service&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;https &lt;span class=&quot;nt&quot;&gt;--permanent&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;systemctl restart firewalld
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;install-reverse-proxy&quot;&gt;Install Reverse Proxy&lt;/h3&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wget https://github.com/fatedier/frp/releases/download/v0.29.0/frp_0.29.0_linux_amd64.tar.gz
+&lt;span class=&quot;nb&quot;&gt;tar &lt;/span&gt;xf frp_0.29.0_linux_amd64.tar.gz
+/lib/systemd/system/
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;</content><author><name>Chiyang Wan</name></author><summary type="html">I have received my new PC.</summary></entry></feed>

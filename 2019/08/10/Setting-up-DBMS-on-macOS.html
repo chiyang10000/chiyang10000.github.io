@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Setting up DBMS on macOS | 我是一只羊</title>
+<meta name="generator" content="Jekyll v3.8.6" />
+<meta property="og:title" content="Setting up DBMS on macOS" />
+<meta name="author" content="Chiyang Wan" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="This post introduces a quick reference on how to set up serveral main stream DBMSs on macOS(tested on macOS 10.12, 10.13 and 10.14). All the code snippets are dedicated to run in bash directly, as a result of which there is no need to switch between shell interpreter and text editor back and forth." />
+<meta property="og:description" content="This post introduces a quick reference on how to set up serveral main stream DBMSs on macOS(tested on macOS 10.12, 10.13 and 10.14). All the code snippets are dedicated to run in bash directly, as a result of which there is no need to switch between shell interpreter and text editor back and forth." />
+<meta property="og:site_name" content="我是一只羊" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-08-10T00:00:00+08:00" />
+<script type="application/ld+json">
+{"url":"/2019/08/10/Setting-up-DBMS-on-macOS.html","headline":"Setting up DBMS on macOS","datePublished":"2019-08-10T00:00:00+08:00","dateModified":"2019-08-10T00:00:00+08:00","mainEntityOfPage":{"@type":"WebPage","@id":"/2019/08/10/Setting-up-DBMS-on-macOS.html"},"author":{"@type":"Person","name":"Chiyang Wan"},"description":"This post introduces a quick reference on how to set up serveral main stream DBMSs on macOS(tested on macOS 10.12, 10.13 and 10.14). All the code snippets are dedicated to run in bash directly, as a result of which there is no need to switch between shell interpreter and text editor back and forth.","@type":"BlogPosting","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="我是一只羊" /></head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">我是一只羊</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Setting up DBMS on macOS</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2019-08-10T00:00:00+08:00" itemprop="datePublished">Aug 10, 2019
+      </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">Chiyang Wan</span></span></p>
+  </header>
+
+  <div id="toc"> <style>
+#toc {
+  position: fixed;
+  left: 0;
+  top: 13%;
+  background-color:#FFF;
+  display: block;
+}
+</style>
+<ul>
+  <li><a href="#system-prerequisite">System Prerequisite</a></li>
+  <li><a href="#hdfs">HDFS</a></li>
+  <li><a href="#oushudb">OushuDB</a></li>
+  <li><a href="#hive">Hive</a></li>
+  <li><a href="#postgresql">PostgreSQL</a></li>
+  <li><a href="#mysql">MySQL</a></li>
+</ul>
+ </div>
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>This post introduces a quick reference on how to set up serveral main stream DBMSs on macOS(tested on macOS 10.12, 10.13 and 10.14). All the code snippets are dedicated to run in <code class="highlighter-rouge">bash</code> directly, as a result of which there is no need to switch between shell interpreter and text editor back and forth.</p>
+
+<p>Each code snippet is divided into to 6 parts, i.e. <code class="highlighter-rouge">Install, Configure, Initialize, Start, Connect and Stop</code>.</p>
+
+<p>And all the related data is stored inside <code class="highlighter-rouge">/db_data/</code>.</p>
+
+<h2 id="system-prerequisite">System Prerequisite</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Setup passphraseless ssh</span>
+<span class="nb">sudo </span>systemsetup <span class="nt">-setremotelogin</span> on
+ssh-keygen <span class="nt">-t</span> rsa <span class="nt">-P</span> <span class="s1">''</span> <span class="nt">-f</span> ~/.ssh/id_rsa
+<span class="nb">cat</span> ~/.ssh/id_rsa.pub <span class="o">&gt;&gt;</span> ~/.ssh/authorized_keys
+<span class="nb">chmod </span>0600 ~/.ssh/authorized_keys
+
+<span class="c"># Configure system kernel state</span>
+<span class="nb">sudo tee</span> /etc/sysctl.conf <span class="o">&lt;&lt;</span> <span class="no">EOF</span><span class="sh">
+kern.sysv.shmmax=2147483648
+kern.sysv.shmmin=1
+kern.sysv.shmmni=64
+kern.sysv.shmseg=16
+kern.sysv.shmall=524288
+kern.maxfiles=65535
+kern.maxfilesperproc=65536
+kern.corefile=/cores/core.%N.%P
+</span><span class="no">EOF
+</span><span class="nb">cat</span> /etc/sysctl.conf | xargs <span class="nb">sudo </span>sysctl
+
+<span class="c"># Add data folder</span>
+<span class="nb">sudo install</span> <span class="nt">-o</span> <span class="nv">$USER</span> <span class="nt">-d</span> /db_data/
+</code></pre></div></div>
+
+<h2 id="hdfs">HDFS</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Install</span>
+brew <span class="nb">install </span>hadoop
+
+<span class="c"># Configure</span>
+<span class="nb">export </span><span class="nv">HADOOP_HOME</span><span class="o">=</span>/usr/local/opt/hadoop/libexec
+<span class="nb">tee</span> <span class="nv">$HADOOP_HOME</span>/etc/hadoop/core-site.xml <span class="o">&lt;&lt;</span> <span class="no">EOF</span><span class="sh">
+&lt;configuration&gt;
+    &lt;property&gt;
+        &lt;name&gt;fs.defaultFS&lt;/name&gt;
+        &lt;value&gt;hdfs://localhost:8020&lt;/value&gt;
+    &lt;/property&gt;
+    &lt;property&gt;
+         &lt;name&gt;hadoop.proxyuser.</span><span class="nv">$USER</span><span class="sh">.hosts&lt;/name&gt;
+         &lt;value&gt;*&lt;/value&gt;
+    &lt;/property&gt;
+    &lt;property&gt;
+        &lt;name&gt;hadoop.proxyuser.</span><span class="nv">$USER</span><span class="sh">.groups&lt;/name&gt;
+        &lt;value&gt;*&lt;/value&gt;
+    &lt;/property&gt;
+&lt;/configuration&gt;
+</span><span class="no">EOF
+</span><span class="nb">tee</span> <span class="nv">$HADOOP_HOME</span>/etc/hadoop/hdfs-site.xml <span class="o">&lt;&lt;</span> <span class="no">EOF</span><span class="sh">
+&lt;configuration&gt;
+    &lt;property&gt;
+        &lt;name&gt;dfs.namenode.name.dir&lt;/name&gt;
+        &lt;value&gt;file:///db_data/hdfs/name&lt;/value&gt;
+    &lt;/property&gt;
+    &lt;property&gt;
+        &lt;name&gt;dfs.datanode.data.dir&lt;/name&gt;
+        &lt;value&gt;file:///db_data/hdfs/data&lt;/value&gt;
+    &lt;/property&gt;
+    &lt;property&gt;
+        &lt;name&gt;dfs.replication&lt;/name&gt;
+        &lt;value&gt;1&lt;/value&gt;
+    &lt;/property&gt;
+&lt;/configuration&gt;
+</span><span class="no">EOF
+
+</span><span class="c"># Initialize</span>
+<span class="nb">install</span> <span class="nt">-d</span> /db_data/hdfs/name
+<span class="nb">install</span> <span class="nt">-d</span> /db_data/hdfs/data
+hdfs namenode <span class="nt">-format</span>
+
+<span class="c"># Start</span>
+/usr/local/opt/hadoop/sbin/start-dfs.sh
+
+<span class="c"># Connect</span>
+hdfs dfsadmin <span class="nt">-report</span>
+hdfs dfs <span class="nt">-ls</span> /
+
+<span class="c"># Stop</span>
+/usr/local/opt/hadoop/sbin/stop-dfs.sh
+</code></pre></div></div>
+
+<h2 id="oushudb">OushuDB</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Install</span>
+brew tap chiyang10000/homebrew-yizhiyang
+brew search chiyang10000
+brew <span class="nb">install </span>oushudb
+
+<span class="c"># Configure</span>
+<span class="nb">tee</span> /usr/local/opt/oushudb/etc/hawq-site.xml <span class="o">&lt;&lt;</span> <span class="no">EOF</span><span class="sh">
+&lt;configuration&gt;
+    &lt;property&gt;
+        &lt;name&gt;hawq_dfs_url&lt;/name&gt;
+        &lt;value&gt;localhost:8020/hawq_default&lt;/value&gt;
+        &lt;description&gt;URL for accessing HDFS.&lt;/description&gt;
+    &lt;/property&gt;
+    &lt;property&gt;
+        &lt;name&gt;hawq_master_address_host&lt;/name&gt;
+        &lt;value&gt;localhost&lt;/value&gt;
+    &lt;/property&gt;
+    &lt;property&gt;
+        &lt;name&gt;hawq_master_address_port&lt;/name&gt;
+        &lt;value&gt;5432&lt;/value&gt;
+    &lt;/property&gt;
+    &lt;property&gt;
+        &lt;name&gt;hawq_segment_address_port&lt;/name&gt;
+        &lt;value&gt;40000&lt;/value&gt;
+    &lt;/property&gt;
+    &lt;property&gt;
+        &lt;name&gt;hawq_master_directory&lt;/name&gt;
+        &lt;value&gt;/db_data/hawq-data-directory/masterdd&lt;/value&gt;
+    &lt;/property&gt;
+    &lt;property&gt;
+        &lt;name&gt;hawq_segment_directory&lt;/name&gt;
+        &lt;value&gt;/db_data/hawq-data-directory/segmentdd&lt;/value&gt;
+    &lt;/property&gt;
+    &lt;property&gt;
+        &lt;name&gt;hawq_master_temp_directory&lt;/name&gt;
+        &lt;value&gt;/tmp&lt;/value&gt;
+    &lt;/property&gt;
+    &lt;property&gt;
+        &lt;name&gt;hawq_segment_temp_directory&lt;/name&gt;
+        &lt;value&gt;/tmp&lt;/value&gt;
+    &lt;/property&gt;
+    &lt;property&gt;
+        &lt;name&gt;hawq_magma_port_master&lt;/name&gt;
+        &lt;value&gt;50000&lt;/value&gt;
+    &lt;/property&gt;
+    &lt;property&gt;
+        &lt;name&gt;hawq_magma_port_segment&lt;/name&gt;
+        &lt;value&gt;50005&lt;/value&gt;
+    &lt;/property&gt;
+    &lt;property&gt;
+        &lt;name&gt;hawq_magma_locations_master&lt;/name&gt;
+        &lt;value&gt;file:///db_data/hawq-data-directory/magma_master&lt;/value&gt;
+    &lt;/property&gt;
+    &lt;property&gt;
+        &lt;name&gt;hawq_magma_locations_segment&lt;/name&gt;
+        &lt;value&gt;file:///db_data/hawq-data-directory/magma_segment&lt;/value&gt;
+    &lt;/property&gt;
+    &lt;property&gt;
+        &lt;name&gt;hawq_init_with_hdfs&lt;/name&gt;
+        &lt;value&gt;true&lt;/value&gt;
+        &lt;description&gt;choose whether initing hawq cluster with hdfs&lt;/description&gt;
+    &lt;/property&gt;
+    &lt;property&gt;
+        &lt;name&gt;default_table_format&lt;/name&gt;
+        &lt;value&gt;appendonly&lt;/value&gt;
+        &lt;description&gt;default table format when creating table &lt;/description&gt;
+    &lt;/property&gt;
+&lt;/configuration&gt;
+</span><span class="no">EOF
+
+</span><span class="c"># Initialize</span>
+<span class="nb">rm</span> <span class="nt">-rf</span> /opt/dependency<span class="k">*</span>
+<span class="nb">rm</span> <span class="nt">-rf</span> /db_data/hawq-data-directory
+<span class="nb">install</span> <span class="nt">-d</span> /db_data/hawq-data-directory/masterdd
+<span class="nb">install</span> <span class="nt">-d</span> /db_data/hawq-data-directory/segmentdd
+<span class="nb">install</span> <span class="nt">-d</span> /db_data/hawq-data-directory/magma_master
+<span class="nb">install</span> <span class="nt">-d</span> /db_data/hawq-data-directory/magma_segment
+<span class="nb">source</span> /usr/local/opt/oushudb/greenplum_path.sh
+hawq init cluster <span class="nt">-a</span>
+
+<span class="c"># Start</span>
+<span class="nb">source</span> /usr/local/opt/oushudb/greenplum_path.sh
+hawq start cluster <span class="nt">-a</span>
+
+<span class="c"># Connect</span>
+<span class="nb">source</span> /usr/local/opt/oushudb/greenplum_path.sh
+psql <span class="nt">-d</span> postgres
+
+<span class="c"># Stop</span>
+<span class="nb">source</span> /usr/local/opt/oushudb/greenplum_path.sh
+hawq stop cluster <span class="nt">-a</span>
+</code></pre></div></div>
+
+<h2 id="hive">Hive</h2>
+
+<blockquote>
+  <p>Pay attention that Hive only supports Java 8 or older.</p>
+</blockquote>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Install</span>
+brew <span class="nb">install </span>hive
+
+<span class="c"># Configure</span>
+<span class="nb">export </span><span class="nv">HIVE_HOME</span><span class="o">=</span>/usr/local/opt/hive/libexec
+<span class="nb">tee</span> <span class="nv">$HIVE_HOME</span>/conf/hive-site.xml <span class="o">&lt;&lt;</span> <span class="no">EOF</span><span class="sh">
+&lt;configuration&gt;
+  &lt;property&gt;
+    &lt;name&gt;javax.jdo.option.ConnectionURL&lt;/name&gt;
+    &lt;value&gt;jdbc:derby:;databaseName=/db_data/hive_metastore_db;create=true&lt;/value&gt;
+  &lt;/property&gt;
+  &lt;property&gt;
+    &lt;name&gt;hive.server2.thrift.port&lt;/name&gt;
+    &lt;value&gt;10000&lt;/value&gt;
+  &lt;/property&gt;
+  &lt;property&gt;
+    &lt;name&gt;hive.server2.enable.doAs&lt;/name&gt;
+    &lt;value&gt;false&lt;/value&gt;
+  &lt;/property&gt;
+&lt;/configuration&gt;
+</span><span class="no">EOF
+
+</span><span class="c"># Initialize</span>
+hadoop fs <span class="nt">-mkdir</span>       /tmp
+hadoop fs <span class="nt">-mkdir</span> <span class="nt">-p</span>    /user/hive/warehouse
+hadoop fs <span class="nt">-chmod</span> g+w   /tmp
+hadoop fs <span class="nt">-chmod</span> g+w   /user/hive/warehouse
+schematool <span class="nt">-dbType</span> derby <span class="nt">-initSchema</span>
+
+<span class="c"># Start</span>
+hive <span class="nt">--service</span> hiveserver2
+hive <span class="nt">--service</span> metastore
+
+<span class="c"># Connect</span>
+<span class="c">## Connect to HDFS directly</span>
+hive
+<span class="c">## Connect to hiveserver2</span>
+<span class="c">## Should wait until hiveserver2 started and be aware of connection refused</span>
+beeline <span class="nt">-n</span> <span class="nv">$USER</span> <span class="nt">-u</span> jdbc:hive2://127.0.0.1:10000
+
+<span class="c"># Stop</span>
+killall hive
+</code></pre></div></div>
+
+<h2 id="postgresql">PostgreSQL</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Install</span>
+brew <span class="nb">install </span>postgresql
+
+<span class="c"># Configure/Initialize</span>
+initdb <span class="nt">-D</span> /db_data/postgresql/
+
+<span class="c"># Start</span>
+pg_ctl <span class="nt">-D</span> /db_data/postgresql/ start
+
+<span class="c"># Connect</span>
+psql <span class="nt">-d</span> postgres
+
+<span class="c"># Stop</span>
+pg_ctl <span class="nt">-D</span> /db_data/postgresql/ stop
+</code></pre></div></div>
+
+<h2 id="mysql">MySQL</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Install</span>
+brew <span class="nb">install </span>mysql
+
+<span class="c"># Configure/Initialize</span>
+mysqld <span class="nt">--initialize-insecure</span> <span class="nt">--datadir</span><span class="o">=</span>/db_data/mysql/
+
+<span class="c"># Start</span>
+mysqld <span class="nt">--datadir</span><span class="o">=</span>/db_data/mysql/
+
+<span class="c"># Connect</span>
+mysql <span class="nt">-u</span> root <span class="nt">-D</span> mysql
+
+<span class="c"># Stop</span>
+killall mysqld
+</code></pre></div></div>
+
+  </div><a class="u-url" href="/2019/08/10/Setting-up-DBMS-on-macOS.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col one-half">
+      <h2 class="footer-heading">我是一只羊</h2>
+        <ul class="contact-list">
+          <li class="p-name"></li><li><a class="u-email" href="mailto:chiyang10000@gmail.com">chiyang10000@gmail.com</a></li></ul>
+      </div>
+
+      <div class="footer-col one-half">
+        <p>I am a seasoned DBMS developer on x86_64 machine.
+</p>
+      </div>
+
+      <div class="social-links"><ul class="social-media-list"><li><a href="https://github.com/chiyang10000" title="chiyang10000"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a href="https://www.linkedin.com/in/chiyang10000" title="chiyang10000"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#linkedin"></use></svg></a></li></ul>
+</div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
