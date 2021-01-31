@@ -4,7 +4,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Setting up CentOS 7 | 我是一只羊</title>
-<meta name="generator" content="Jekyll v3.8.6" />
+<meta name="generator" content="Jekyll v4.1.1" />
 <meta property="og:title" content="Setting up CentOS 7" />
 <meta name="author" content="Chiyang Wan" />
 <meta property="og:locale" content="en_US" />
@@ -14,7 +14,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-05-26T00:00:00+08:00" />
 <script type="application/ld+json">
-{"url":"/2019/05/26/Setting-up-CentOS-7.html","headline":"Setting up CentOS 7","datePublished":"2019-05-26T00:00:00+08:00","dateModified":"2019-05-26T00:00:00+08:00","mainEntityOfPage":{"@type":"WebPage","@id":"/2019/05/26/Setting-up-CentOS-7.html"},"author":{"@type":"Person","name":"Chiyang Wan"},"description":"I have received my new PC.","@type":"BlogPosting","@context":"https://schema.org"}</script>
+{"url":"/2019/05/26/Setting-up-CentOS-7.html","headline":"Setting up CentOS 7","dateModified":"2019-05-26T00:00:00+08:00","datePublished":"2019-05-26T00:00:00+08:00","mainEntityOfPage":{"@type":"WebPage","@id":"/2019/05/26/Setting-up-CentOS-7.html"},"author":{"@type":"Person","name":"Chiyang Wan"},"description":"I have received my new PC.","@type":"BlogPosting","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="我是一只羊" /></head>
 <body><header class="site-header">
@@ -173,7 +173,7 @@ net.ipv4.ip_forward=1
 
     <p>Pay attention to that it is not allowed to reduce lvm when mounted, which might cause super block corruption.</p>
 
-    <p>Be familiar with <code class="highlighter-rouge">pvs</code>, <code class="highlighter-rouge">lvs</code>, <code class="highlighter-rouge">/etc/fstab</code>, <code class="highlighter-rouge">lvcreate</code>, <code class="highlighter-rouge">lvremove</code>.</p>
+    <p>Be familiar with <code class="language-plaintext highlighter-rouge">pvs</code>, <code class="language-plaintext highlighter-rouge">lvs</code>, <code class="language-plaintext highlighter-rouge">/etc/fstab</code>, <code class="language-plaintext highlighter-rouge">lvcreate</code>, <code class="language-plaintext highlighter-rouge">lvremove</code>.</p>
 
     <p>https://www.tecmint.com/extend-and-reduce-lvms-in-linux/</p>
 
@@ -288,7 +288,7 @@ HDFS_SITE
 
 <h3 id="install-eclipse">Install Eclipse</h3>
 
-<p>Use <code class="highlighter-rouge">xev</code> to check key bindings.</p>
+<p>Use <code class="language-plaintext highlighter-rouge">xev</code> to check key bindings.</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>yum <span class="nb">install </span>xorg-x11-server-Xorg xorg-x11-xauth xorg-x11-apps xorg-x11-server-utils xorg-x11-utils xorg-x11-xinit <span class="nt">-y</span>
 

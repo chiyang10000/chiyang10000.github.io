@@ -1,9 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.6">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2020-12-18T17:09:30+08:00</updated><id>/feed.xml</id><title type="html">我是一只羊</title><subtitle>I am a DBMS developer.
-</subtitle><entry><title type="html">Setting up DBMS on macOS</title><link href="/2019/08/10/Setting-up-DBMS-on-macOS.html" rel="alternate" type="text/html" title="Setting up DBMS on macOS" /><published>2019-08-10T00:00:00+08:00</published><updated>2019-08-10T00:00:00+08:00</updated><id>/2019/08/10/Setting-up-DBMS-on-macOS</id><content type="html" xml:base="/2019/08/10/Setting-up-DBMS-on-macOS.html">&lt;p&gt;This post introduces a quick reference on how to set up serveral main stream DBMSs on macOS(tested on macOS 10.12, 10.13 and 10.14). All the code snippets are dedicated to run in &lt;code class=&quot;highlighter-rouge&quot;&gt;bash&lt;/code&gt; directly, as a result of which there is no need to switch between shell interpreter and text editor back and forth.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.1">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2021-01-31T11:19:01+08:00</updated><id>/feed.xml</id><title type="html">我是一只羊</title><subtitle>I am a DBMS developer.
+</subtitle><entry><title type="html">Setting up DBMS on macOS</title><link href="/2019/08/10/Setting-up-DBMS-on-macOS.html" rel="alternate" type="text/html" title="Setting up DBMS on macOS" /><published>2019-08-10T00:00:00+08:00</published><updated>2019-08-10T00:00:00+08:00</updated><id>/2019/08/10/Setting-up-DBMS-on-macOS</id><content type="html" xml:base="/2019/08/10/Setting-up-DBMS-on-macOS.html">&lt;p&gt;This post introduces a quick reference on how to set up serveral main stream DBMSs on macOS(tested on macOS 10.12, 10.13 and 10.14). All the code snippets are dedicated to run in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bash&lt;/code&gt; directly, as a result of which there is no need to switch between shell interpreter and text editor back and forth.&lt;/p&gt;
 
-&lt;p&gt;Each code snippet is divided into to 6 parts, i.e. &lt;code class=&quot;highlighter-rouge&quot;&gt;Install, Configure, Initialize, Start, Connect and Stop&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Each code snippet is divided into to 6 parts, i.e. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Install, Configure, Initialize, Start, Connect and Stop&lt;/code&gt;.&lt;/p&gt;
 
-&lt;p&gt;And all the related data is stored inside &lt;code class=&quot;highlighter-rouge&quot;&gt;/db_data/&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;And all the related data is stored inside &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/db_data/&lt;/code&gt;.&lt;/p&gt;
 
 &lt;h2 id=&quot;system-prerequisite&quot;&gt;System Prerequisite&lt;/h2&gt;
 
@@ -89,8 +89,8 @@ hdfs dfs &lt;span class=&quot;nt&quot;&gt;-ls&lt;/span&gt; /
 &lt;h2 id=&quot;oushudb&quot;&gt;OushuDB&lt;/h2&gt;
 
 &lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Install&lt;/span&gt;
-brew tap chiyang10000/homebrew-yizhiyang
-brew search chiyang10000
+brew tap chiyang10000/tap
+brew search chiyang10000/tap
 brew &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;oushudb
 
 &lt;span class=&quot;c&quot;&gt;# Configure&lt;/span&gt;
@@ -357,7 +357,7 @@ net.ipv4.ip_forward=1
 
     &lt;p&gt;Pay attention to that it is not allowed to reduce lvm when mounted, which might cause super block corruption.&lt;/p&gt;
 
-    &lt;p&gt;Be familiar with &lt;code class=&quot;highlighter-rouge&quot;&gt;pvs&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;lvs&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;/etc/fstab&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;lvcreate&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;lvremove&lt;/code&gt;.&lt;/p&gt;
+    &lt;p&gt;Be familiar with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;pvs&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lvs&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/fstab&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lvcreate&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lvremove&lt;/code&gt;.&lt;/p&gt;
 
     &lt;p&gt;https://www.tecmint.com/extend-and-reduce-lvms-in-linux/&lt;/p&gt;
 
@@ -472,7 +472,7 @@ HDFS_SITE
 
 &lt;h3 id=&quot;install-eclipse&quot;&gt;Install Eclipse&lt;/h3&gt;
 
-&lt;p&gt;Use &lt;code class=&quot;highlighter-rouge&quot;&gt;xev&lt;/code&gt; to check key bindings.&lt;/p&gt;
+&lt;p&gt;Use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;xev&lt;/code&gt; to check key bindings.&lt;/p&gt;
 
 &lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;yum &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;xorg-x11-server-Xorg xorg-x11-xauth xorg-x11-apps xorg-x11-server-utils xorg-x11-utils xorg-x11-xinit &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt;
 
